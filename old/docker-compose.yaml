@@ -1,0 +1,65 @@
+version: "3.5"
+
+networks:
+  kong-net:
+    driver: bridge
+
+services:
+  kong:
+    image: kong-local
+    # image: kong:2.8.0
+    container_name: kong-dbless
+    restart: always
+    networks:
+      - kong-net
+    volumes:
+      - ${PWD}/kong.yml:/kong/declarative/kong.yml
+      # - ${PWD}/logs:/usr/local/kong/modsec/
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      KONG_NGINX_PROXY_MODSECURITY: "Off"
+      KONG_NGINX_PROXY_MODSECURITY_RULES_FILE: /etc/kong/owasp-modsecurity-crs/kong-modsecurity.conf
+      KONG_NGINX_PROXY_MODSECURITY_RULES: |
+        '
+              # SecRuleEngine On
+              SecRuleEngine DetectionOnly
+
+              SecRequestBodyAccess On
+
+              # SecDebugLog /usr/local/kong/modsec/debug.log
+              # SecDebugLogLevel 9
+
+              SecAuditEngine RelevantOnly
+              SecAuditLogParts ABDHZ
+              # SecAuditLogType Serial
+              SecAuditLog /usr/local/kong/logs/access.log
+              SecAuditLogFormat JSON
+
+              # Include /usr/local/kong/modsec/rules/*.conf
+              # SecRule REMOTE_ADDR "@ipMatch 127.0.0.1" "id:10000,phase:1,pass,nolog,ctl:ruleEngine=Off"
+            '
+    ports:
+      - "8000:8000"
+      - "9443:8443"
+      - "8001:8001"
+      - "8444:8444"
+      - "8002:8002"
+      - "8445:8445"
+      - "8003:8003"
+      - "8004:8004"
+ 
+  web1:
+    image: nginxdemos/hello:latest
+    container_name: web1
+    restart: always
+    networks:
+      - kong-net
+    ports:
+      - "9091:80"

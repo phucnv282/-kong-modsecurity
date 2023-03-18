@@ -1,0 +1,9 @@
+_format_version: "1.1"
+
+services:
+  - name: web1
+    url: http://web1:80
+    routes:
+      - name: web1
+        paths:
+          - /
