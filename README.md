@@ -1,1 +1,1 @@
-# -kong-modsecurity
+# kong-modsecurity
